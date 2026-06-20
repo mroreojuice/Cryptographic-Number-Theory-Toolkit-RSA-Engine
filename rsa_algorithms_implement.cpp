@@ -1,8 +1,3 @@
-
-// Cryptographic Number Theory Toolkit & Tiny RSA Engine (C++)
-// Primitives: Binary Modular Exponentiation, Extended GCD, Miller-Rabin Test
-
-
 #include <iostream>
 #include <vector>
 #include <string>
@@ -18,37 +13,31 @@ typedef long long ll;
 class NumberTheory {
 public:
 
-    /*   
-     * Computes (base^exponent) % mod using binary exponentiation.
-     * Time Complexity: O(log(exponent))
-     */
+    /* Computes (base^exponent) % mod using binary exponentiation.
+    Time Complexity: O(log(exponent)) */
+     
     ull modularPower(ull base, ull exponent, ull mod) {
         if (mod == 1) return 0;
 
         ull result = 1;
-        base = base % mod;
+        base = base%mod;
 
         while (exponent > 0) {
             // If current bit is set, multiply base to result
-            if (exponent % 2 == 1) {
-                result = (ull)((__int128)result * base % mod);
-            }
+            if (exponent % 2 == 1) result = (ull)((__int128)result * base % mod);
+            
             // Bit shift: square base and halve exponent
-            base = (ull)((__int128)base * base % mod);
+            base = (ull)((__int128)base*base % mod);
             exponent = exponent / 2;
         }
         return result;
     }
 
-    /*
-     * Computes extended GCD such that: ax + by = gcd(a, b)
-     * Used for isolating modular multiplicative inverse coefficients.
-     * returns {gcd,x,y} 
-     */
+    /* Computes extended GCD such that: ax + by = gcd(a, b)
+       Used for isolating modular multiplicative inverse coefficients.
+       returns {gcd,x,y} */
     vector<ll> extendedGCD(ll a, ll b) {
-        if (b == 0) {
-            return {a, 1, 0}; // Base case: ax + 0y = a -> x=1, y=0
-        }
+        if (b == 0) return {a, 1, 0}; // Base case: ax + 0y = a -> x=1, y=0
 
         vector<ll> smallerAnswer = extendedGCD(b, a % b);
 
@@ -58,9 +47,9 @@ public:
 
         // Inductive step update formulas
         ll x = y1;
-        ll y = x1 - (a / b) * y1;
+        ll y = x1 -(a/b) * y1;
 
-        return {gcd, x, y};
+        return {gcd,x,y};
     }
 
     /*
@@ -72,20 +61,17 @@ public:
         ll gcd = result[0];
         ll x = result[1];
 
-        if (gcd != 1) {
-            throw runtime_error("Modular inverse does not exist (gcd != 1)");
-        }
+        if (gcd != 1) throw runtime_error("Modular inverse does not exist (gcd != 1)");
 
         // Adjust negative coefficients into bounded field [0, m-1]
-        return (x % m + m) % m;
+        return (x%m + m)%m;
     }
 
     /*
-     * Probabilistic check for primality using deterministic 64-bit bases.
-     * Guaranteed 100% accurate for all inputs bounded by uint64_t limits.
-     * if returned flase then number is guaranteed to be non prime
-     * if true then it means it passed the test, there is a certain probability that the number is not prime
-     */
+     Probabilistic check for primality using deterministic 64-bit bases.
+     Guaranteed 100% accurate for all inputs bounded by uint64_t limits.
+     if returned flase then number is guaranteed to be non prime
+     if true then it means it passed the test, there is a certain probability that the number is not prime */
 
     bool isPrime(ull n) {
         if (n < 2) return false;
@@ -93,9 +79,9 @@ public:
         if (n % 2 == 0) return false;
 
         // Express factorization state n - 1 = d * 2^s where d is odd
-        ull d = n - 1;
+        ull d = n-1;
         int s = 0;
-        while (d % 2 == 0) {
+        while (d%2 == 0) {
             d /= 2;
             s++;
         }
@@ -104,11 +90,11 @@ public:
         vector<ull> witnesses = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37};
 
         for (ull a : witnesses) {
-            if (a >= n) continue;
+            if (a>=n) continue;
 
             ull x = modularPower(a, d, n);
 
-            if (x == 1 || x == n - 1) continue;
+            if (x==1 || x==n-1) continue;
 
             bool passedRound = false;
             for (int r = 0; r < s - 1; r++) {
@@ -125,9 +111,7 @@ public:
         return true; // Prime confirmation
     }
 
-    /**
-     * Samples a random prime coordinate constrained within requested bit limits.
-     */
+    // Samples a random prime coordinate constrained within requested bit limits.
     ull generateRandomPrime(int bits) {
         ull low = 1ULL << (bits - 1);
         ull high = (1ULL << bits) - 1;
@@ -141,16 +125,12 @@ public:
             candidate |= 1ULL; // Enforce odd numbers
             candidate |= low;  // Prevent truncation beneath bit ceiling
 
-            if (isPrime(candidate)) {
-                return candidate;
-            }
+            if (isPrime(candidate)) return candidate;
         }
     }
 };
 
-/**
- * Illustrative object handling key-generation, block encryption, and decryption steps.
- */
+// Illustrative object handling key-generation, block encryption, and decryption steps.
 class SimpleRSA {
 private:
     ull n; // Public Modulus
@@ -159,9 +139,7 @@ private:
     NumberTheory nt;
 
 public:
-    /**
-     * Allocates public/private algebraic components using input bit thresholds.
-     */
+    //Allocates public/private algebraic components using input bit thresholds.
     void generateKeys(int primeBits) {
         ull p = nt.generateRandomPrime(primeBits);
         ull q = nt.generateRandomPrime(primeBits);
@@ -174,9 +152,8 @@ public:
         ull phi = (p - 1) * (q - 1);
 
         e = 65537; // Standard verification exponent choice
-        if (e >= phi) {
-            e = 17;
-        }
+        if (e >= phi) e = 17;
+        
 
         // Ensure public exponent is coprime to Euler's totient metric
         while (nt.extendedGCD((ll)e, (ll)phi)[0] != 1) {
@@ -190,9 +167,9 @@ public:
     ull getPublicKeyE() { return e; }
     ull getPrivateKeyD() { return d; }
 
-    /**
-     * Evaluates c = (m^e) % n sequence block-by-block across character vectors.
-     */
+    
+     // Evaluates c = (m^e) % n sequence block-by-block across character vectors.
+     
     vector<ull> encryptMessage(string message) {
         vector<ull> cipherText;
         for (char ch : message) {
@@ -202,9 +179,8 @@ public:
         return cipherText;
     }
 
-    /**
-     * Restores m = (c^d) % n sequence block-by-block to recover source plaintext string.
-     */
+    
+     // Restores m = (c^d) % n sequence block-by-block to recover source plaintext string.
     string decryptMessage(vector<ull> cipherText) {
         string originalMessage = "";
         for (ull c : cipherText) {
@@ -217,8 +193,8 @@ public:
 int main() {
     NumberTheory nt;
 
-    // --- Primitive Executions Diagnostics ---
-    cout << "===== Math Primitive Performance Verification =====" << endl;
+    //Primitive Executions Diagnostics
+    cout << "Math Primitive Performance Verification" << endl;
     vector<ull> testNumbers = {2, 17, 561, 97, 1000000007ULL};
     for (ull num : testNumbers) {
         cout << "Primality of " << num << " -> " << (nt.isPrime(num) ? "PRIME" : "COMPOSITE") << endl;
@@ -229,8 +205,8 @@ int main() {
     cout << "Modular inverse of " << a << " mod " << m << " = " << nt.modularInverse(a, m) << endl;
     cout << endl;
 
-    // --- RSA Pipeline Testing ---
-    cout << "===== RSA Cryptosystem Lifecycle Engine =====" << endl;
+    //RSA Pipeline Testing
+    cout << "RSA Cryptosystem Lifecycle Engine" << endl;
     SimpleRSA rsa;
     rsa.generateKeys(16); // 16-bit primitives used for development evaluation
 
